@@ -21,9 +21,9 @@ void setup() {
   server.begin();
   server.setNoDelay(true);
   
-  Serial.print("Ready! Use 'telnet ");
+  Serial.print("Ready! localIP: ");
   Serial.print(WiFi.localIP());
-  Serial.println(" 23' to connect");
+  Serial.println("");
 }
 void loop() {
   uint8_t i;
@@ -34,7 +34,7 @@ void loop() {
       if (!serverClients[i] || !serverClients[i].connected()){
         if(serverClients[i]) serverClients[i].stop();
         serverClients[i] = server.available();
-        //Serial.print("New client: "); Serial.print(i);
+        Serial.print("Connected To client: "); Serial.print(i);
         continue;
       }
     }
@@ -46,26 +46,12 @@ void loop() {
   for(i = 0; i < MAX_SRV_CLIENTS; i++){
     if (serverClients[i] && serverClients[i].connected()){
       if(serverClients[i].available()){
-        //get data from the telnet client and push it to the UART
+        //get data from the Socket and push it to the UART
         
         while(serverClients[i].available()){ 
             Serial.write(serverClients[i].read());
-                    }
+        }
       }
     }
   }
 }
-  /*/check UART for data
-  if(Serial.available()){
-    size_t len = Serial.available();
-    uint8_t sbuf[len];
-    Serial.readBytes(sbuf, len);
-    //push UART data to all connected telnet clients
-    for(i = 0; i < MAX_SRV_CLIENTS; i++){
-      if (serverClients[i] && serverClients[i].connected()){
-        serverClients[i].write(sbuf, len);
-        delay(1);
-      }
-    }
-  }*/
-
