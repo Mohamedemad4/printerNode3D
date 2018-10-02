@@ -1,11 +1,21 @@
+///
+/////////////////
+/////////////////
+/////////////////
+/////////////////
+//Please Test Me/
+/////////////////
+/////////////////
+/////////////////
+///
 const char* ssid = "KMT House_5";
 const char* password = "welovehacking5";
 
 
 #include <ESP8266WiFi.h>
-//how many clients should be able to telnet to this ESP8266
+//how many clients should be able to connect to this ESP8266
 #define MAX_SRV_CLIENTS 1
-WiFiServer server(23);
+WiFiServer server(9999);
 WiFiClient serverClients[MAX_SRV_CLIENTS];
 void setup() {
   Serial.begin(9600);
@@ -21,9 +31,9 @@ void setup() {
   server.begin();
   server.setNoDelay(true);
   
-  Serial.print("Ready! Use 'telnet ");
+  Serial.print("Ready! localIP: ");
   Serial.print(WiFi.localIP());
-  Serial.println(" 23' to connect");
+  Serial.println("");
 }
 void loop() {
   uint8_t i;
@@ -34,7 +44,7 @@ void loop() {
       if (!serverClients[i] || !serverClients[i].connected()){
         if(serverClients[i]) serverClients[i].stop();
         serverClients[i] = server.available();
-        //Serial.print("New client: "); Serial.print(i);
+        Serial.print("Connected To Client: "); Serial.print(i);
         continue;
       }
     }
@@ -46,26 +56,22 @@ void loop() {
   for(i = 0; i < MAX_SRV_CLIENTS; i++){
     if (serverClients[i] && serverClients[i].connected()){
       if(serverClients[i].available()){
-        //get data from the telnet client and push it to the UART
-        
         while(serverClients[i].available()){ 
             Serial.write(serverClients[i].read());
-                    }
+            }
+        }
+        if(Serial.available()){
+            size_t len = Serial.available();
+            uint8_t sbuf[len];
+            Serial.readBytes(sbuf, len);
+            //push UART data to all connected telnet clients
+            for(i = 0; i < MAX_SRV_CLIENTS; i++){
+              if (serverClients[i] && serverClients[i].connected()){
+                serverClients[i].write(sbuf, len);
+                //delay(1);
+          }
+        }
       }
     }
   }
 }
-  /*/check UART for data
-  if(Serial.available()){
-    size_t len = Serial.available();
-    uint8_t sbuf[len];
-    Serial.readBytes(sbuf, len);
-    //push UART data to all connected telnet clients
-    for(i = 0; i < MAX_SRV_CLIENTS; i++){
-      if (serverClients[i] && serverClients[i].connected()){
-        serverClients[i].write(sbuf, len);
-        delay(1);
-      }
-    }
-  }*/
-
