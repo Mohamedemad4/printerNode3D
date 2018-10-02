@@ -17,7 +17,7 @@ var nodeServer="localhost:8080";
 func main(){
     router := mux.NewRouter()
     router.HandleFunc("/",RootPage).Methods("GET")
-    router.HandleFunc("/s",FileUpload).Methods("POST")
+    router.HandleFunc("/",FileUpload).Methods("POST")
   
     log.Println("Serving on :5000")
     log.Fatal(http.ListenAndServe(":5000",router))
@@ -34,14 +34,11 @@ func RootPage(w http.ResponseWriter, r *http.Request){
 
 func FileUpload(w http.ResponseWriter, r *http.Request){
 	var Buf bytes.Buffer
-	//params := mux.Vars(r) //doesn't work
+	r.ParseForm()
 	file, _, err := r.FormFile("gcode")
-
-	/*FileName := params["fname"]
-    FCode := params["fcode"]
-	log.Println(FCode)
-	log.Println(FileName)
-	*/
+	FileName := r.FormValue("fname")
+    FCode := r.FormValue("fcode")
+	
 	if err != nil {
         log.Fatal(err)
     }
@@ -50,7 +47,7 @@ func FileUpload(w http.ResponseWriter, r *http.Request){
     io.Copy(&Buf, file)
 
     contents := Buf.String()
-    Status:=uploadCode(contents,"M23","ss.gco")
+    Status:=uploadCode(contents,FCode,FileName)
 
     fmt.Fprintf(w,Status)
 }
