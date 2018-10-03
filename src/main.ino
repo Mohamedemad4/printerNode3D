@@ -44,6 +44,7 @@ void loop() {
       if (!serverClients[i] || !serverClients[i].connected()){
         if(serverClients[i]) serverClients[i].stop();
         serverClients[i] = server.available();
+
         Serial.print("Connected To Client: "); Serial.print(i);
         continue;
       }
@@ -69,9 +70,13 @@ void loop() {
               if (serverClients[i] && serverClients[i].connected()){
                 serverClients[i].write(sbuf, len);
                 //delay(1);
-          }
-        }
-      }
+                }
+              //get data from the Socket and push it to the UART
+              while(serverClients[i].available()){ 
+                  Serial.write(serverClients[i].read());
+              }
+            }
     }
+  }
   }
 }

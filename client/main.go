@@ -40,9 +40,17 @@ func RootPage(w http.ResponseWriter, r *http.Request){
 
 func FileUpload(w http.ResponseWriter, r *http.Request){
 	var Buf bytes.Buffer
+<<<<<<< HEAD
     r.ParseForm()
 	file, _, err := r.FormFile("gcode")
 
+=======
+	r.ParseForm()
+	file, _, err := r.FormFile("gcode")
+	FileName := r.FormValue("fname")
+    FCode := r.FormValue("fcode")
+	
+>>>>>>> master
 	if err != nil {
         log.Fatal(err)
     }
@@ -51,7 +59,13 @@ func FileUpload(w http.ResponseWriter, r *http.Request){
     io.Copy(&Buf, file)
 
     contents := Buf.String()
+<<<<<<< HEAD
     uploadCode(contents,"M23","ss.gco",w,r)
+=======
+    Status:=uploadCode(contents,FCode,FileName)
+
+    fmt.Fprintf(w,Status)
+>>>>>>> master
 }
 
 func StatusSock(w http.ResponseWriter, r *http.Request){
