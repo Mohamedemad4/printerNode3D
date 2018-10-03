@@ -1,4 +1,5 @@
 //See how to make websocket conversion
+//
 package main
 
 import (
@@ -10,6 +11,7 @@ import (
 "net/http"
 "io/ioutil"
 "strconv"
+"bufio"
 "log"
 "net"
 "github.com/gorilla/mux"
@@ -38,14 +40,9 @@ func RootPage(w http.ResponseWriter, r *http.Request){
 
 func FileUpload(w http.ResponseWriter, r *http.Request){
 	var Buf bytes.Buffer
-	//params := mux.Vars(r) //doesn't work
+    r.ParseForm()
 	file, _, err := r.FormFile("gcode")
 
-	/*FileName := params["fname"]
-    FCode := params["fcode"]
-	log.Println(FCode)
-	log.Println(FileName)
-	*/
 	if err != nil {
         log.Fatal(err)
     }
@@ -57,6 +54,32 @@ func FileUpload(w http.ResponseWriter, r *http.Request){
     uploadCode(contents,"M23","ss.gco",w,r)
 }
 
+func StatusSock(w http.ResponseWriter, r *http.Request){
+    c, err := upgrader.Upgrade(w, r, nil)
+    if err != nil {
+        log.Println("upgrade:", err)
+        fmt.Fprintf(w,"Error Please Check the Logs")
+    }
+
+    conn,err:=net.Dial("tcp", nodeServer)
+
+    if err!=nil{
+        log.Println(err)
+        fmt.Fprintf(w,"Could not connect to the Node Please check your connection")
+    }
+
+    defer c.Close()
+    for {
+        connbuf := bufio.NewReader(conn)    
+        str, err:= connbuf.ReadString('\n')
+        if err!=nil{
+            log.Println(err)
+            fmt.Fprintf(w,"Error Check the Logs")
+        }
+        c.WriteMessage(1,str)
+    }
+
+}
 func uploadCode(file string,FCode string,FileName string,w http.ResponseWriter,r *http.Request){
 	var commands int
 	var speedmode bool
@@ -76,21 +99,13 @@ func uploadCode(file string,FCode string,FileName string,w http.ResponseWriter,r
 		fmt.Fprintf(conn,"M28 %s \n",FileName)
 	}
 
-	c, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Println("upgrade:", err)
-		fmt.Fprintf(w,"Error Please Check the Logs")
-	}
 
-	defer c.Close()
-    for index, element := range GcodeSplit{
+	for index, element := range GcodeSplit{
     	fmt.Fprintf(conn,element+"\n") 
     	commands+=1
 
         if (commands==500){ //100,80
             commands=0
-            perc:=[]byte(strconv.FormatFloat(float64(index)/float64(GcodeSplitLen)*10, 'f', 6, 64))
-            c.WriteMessage(10,perc)
             speedmode=false
         }else{
             speedmode=true

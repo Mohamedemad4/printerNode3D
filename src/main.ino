@@ -14,7 +14,7 @@ const char* password = "welovehacking5";
 
 #include <ESP8266WiFi.h>
 //how many clients should be able to connect to this ESP8266
-#define MAX_SRV_CLIENTS 1
+#define MAX_SRV_CLIENTS 2 //one for Send One For Recv
 WiFiServer server(9999);
 WiFiClient serverClients[MAX_SRV_CLIENTS];
 void setup() {
