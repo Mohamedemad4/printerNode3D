@@ -2,16 +2,65 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+<script>  
+window.addEventListener("load", function(evt) {
+
+    var output = document.getElementById("output");
+    var input = document.getElementById("input");
+    var ws;
+
+    var print = function(message) {
+        var d = document.createElement("div");
+        d.innerHTML = message;
+        output.appendChild(d);
+    };
+
+    document.getElementById("open").onclick = function(evt) {
+        if (ws) {
+            return false;
+        }
+        ws = new WebSocket("ws://localhost:5000/socket");
+        
+        ws.onclose = function(evt) {
+            ws = null;
+
+        }
+        ws.onmessage = function(evt) {
+            print(evt.data);
+        }
+        ws.onerror = function(evt) {
+            print("ERROR: " + evt.data);
+        }
+        return false;
+    };
+
+
+    document.getElementById("close").onclick = function(evt) {
+        if (!ws) {
+            return false;
+        }
+        ws.close();
+        document.getElementById("output").innerHTML=null;
+        return false;
+    };
+
+});
+</script>
 </head>
+
 	<center><h1>hello world</h1></center>
 	<form method="post" action="/" enctype="multipart/form-data">
 		<input type="file" name="gcode"/>
-
+<form>
+<button class="w3-btn-black" id="open">Open Print Status</button>
+<button class="w3-btn-black" id="close">close Print Status</button>
+</form>
+<div id="output"></div>
 		<input type="text" name="fname" placeholder='file name (must end in ".gco")'>
 		<input type="radio" name="fcode" class="w3-radiobox" value="M928">Print While Saving to SD<br>
 		<input type="radio" name="fcode" class="w3-radiobox" value="M28">Only Save To SD Card<br>
 		<input type="radio" name="fcode" class="w3-radiobox" value="M23" checked>Save To SD Card and Then Print (recommended)<br>
 		
-		<input type="submit" class="w3-btn">
+		<input type="submit" class="w3-btn-black">
 	</form>
 </html>

@@ -1,5 +1,4 @@
-//See how to make websocket conversion
-//
+
 package main
 
 import (
@@ -10,7 +9,6 @@ import (
 "strings"
 "net/http"
 "io/ioutil"
-"strconv"
 "bufio"
 "log"
 "net"
@@ -24,7 +22,8 @@ func main(){
     router := mux.NewRouter()
     router.HandleFunc("/",RootPage).Methods("GET")
     router.HandleFunc("/",FileUpload).Methods("POST")
-  
+    router.HandleFunc("/socket",StatusSock).Methods("GET")
+
     log.Println("Serving on :5000")
     log.Fatal(http.ListenAndServe(":5000",router))
 }
@@ -36,36 +35,6 @@ func RootPage(w http.ResponseWriter, r *http.Request){
     }
     w.Header().Set("Content-Type", "text/html; charset=utf-8")
     w.Write(data)	
-}
-
-func FileUpload(w http.ResponseWriter, r *http.Request){
-	var Buf bytes.Buffer
-<<<<<<< HEAD
-    r.ParseForm()
-	file, _, err := r.FormFile("gcode")
-
-=======
-	r.ParseForm()
-	file, _, err := r.FormFile("gcode")
-	FileName := r.FormValue("fname")
-    FCode := r.FormValue("fcode")
-	
->>>>>>> master
-	if err != nil {
-        log.Fatal(err)
-    }
-    defer file.Close()
-    
-    io.Copy(&Buf, file)
-
-    contents := Buf.String()
-<<<<<<< HEAD
-    uploadCode(contents,"M23","ss.gco",w,r)
-=======
-    Status:=uploadCode(contents,FCode,FileName)
-
-    fmt.Fprintf(w,Status)
->>>>>>> master
 }
 
 func StatusSock(w http.ResponseWriter, r *http.Request){
@@ -83,23 +52,45 @@ func StatusSock(w http.ResponseWriter, r *http.Request){
     }
 
     defer c.Close()
+    defer conn.Close()
     for {
         connbuf := bufio.NewReader(conn)    
-        str, err:= connbuf.ReadString('\n')
+        str, err:= connbuf.ReadBytes('\n') //it is not a string really
         if err!=nil{
             log.Println(err)
-            fmt.Fprintf(w,"Error Check the Logs")
+            c.WriteMessage(1,[]byte("Conntection to Printer Closed"))
+            break
         }
         c.WriteMessage(1,str)
     }
 
 }
+
+
+func FileUpload(w http.ResponseWriter, r *http.Request){
+	var Buf bytes.Buffer
+	r.ParseForm()
+	file, _, err := r.FormFile("gcode")
+	FileName := r.FormValue("fname")
+    FCode := r.FormValue("fcode")
+	
+	if err != nil {
+        log.Fatal(err)
+    }
+    defer file.Close()
+    
+    io.Copy(&Buf, file)
+
+    contents := Buf.String()
+    uploadCode(contents,FCode,FileName,w,r)
+    fmt.Fprintf(w,"s")
+}
+
 func uploadCode(file string,FCode string,FileName string,w http.ResponseWriter,r *http.Request){
 	var commands int
 	var speedmode bool
 
 	GcodeSplit:=strings.Split(file, "\n")
-	GcodeSplitLen:=len(strings.Split(file, "\n"))
 
 	conn,err:=net.Dial("tcp", nodeServer)
 
@@ -108,13 +99,13 @@ func uploadCode(file string,FCode string,FileName string,w http.ResponseWriter,r
 		fmt.Fprintf(w,"Could not connect to the Node Please check your connection")
 	}
 	if (FCode=="M928"){
-		fmt.Fprintf(conn,"M928 %s \n",FileName) // todo: unsure about this test it please
+		fmt.Fprintf(w,"M928 %s \n",FileName) // todo: unsure about this test it please
 	}else{
-		fmt.Fprintf(conn,"M28 %s \n",FileName)
+		fmt.Fprintf(w,"M28 %s \n",FileName)
 	}
 
 
-	for index, element := range GcodeSplit{
+	for _, element := range GcodeSplit{
     	fmt.Fprintf(conn,element+"\n") 
     	commands+=1
 
