@@ -13,9 +13,10 @@ import (
 "log"
 "net"
 "github.com/gorilla/mux"
-"github.com/gorilla/websocket")
+"github.com/gorilla/websocket"
+"github.com/skratchdot/open-golang/open")
 
-var nodeServer="localhost:8080";
+var nodeServer = "";
 var upgrader = websocket.Upgrader{}
 
 func main(){
@@ -25,6 +26,7 @@ func main(){
     router.HandleFunc("/socket",StatusSock).Methods("GET")
 
     log.Println("Serving on :5000")
+    go open.Run("http://localhost:5000")
     log.Fatal(http.ListenAndServe(":5000",router))
 }
 func RootPage(w http.ResponseWriter, r *http.Request){
@@ -73,6 +75,7 @@ func FileUpload(w http.ResponseWriter, r *http.Request){
 	file, _, err := r.FormFile("gcode")
 	FileName := r.FormValue("fname")
     FCode := r.FormValue("fcode")
+    nodeServer = r.FormValue("ipNode")
 	
 	if err != nil {
         log.Fatal(err)
@@ -82,17 +85,18 @@ func FileUpload(w http.ResponseWriter, r *http.Request){
     io.Copy(&Buf, file)
 
     contents := Buf.String()
-    uploadCode(contents,FCode,FileName,w,r)
+    uploadCode(contents,FCode,FileName,nodeServer,w,r)
     fmt.Fprintf(w,"s")
 }
 
-func uploadCode(file string,FCode string,FileName string,w http.ResponseWriter,r *http.Request){
+func uploadCode(file string,FCode string,FileName string,nodeServer string,w http.ResponseWriter,r *http.Request){
 	var commands int
 	var speedmode bool
 
 	GcodeSplit:=strings.Split(file, "\n")
+    glen:=len(GcodeSplit)
 
-	conn,err:=net.Dial("tcp", nodeServer)
+	conn,err:=net.Dial("tcp", nodeServer+":9999")
 
 	if err!=nil{
 		log.Println(err)
@@ -105,13 +109,14 @@ func uploadCode(file string,FCode string,FileName string,w http.ResponseWriter,r
 	}
 
 
-	for _, element := range GcodeSplit{
+	for index, element := range GcodeSplit{
     	fmt.Fprintf(conn,element+"\n") 
     	commands+=1
 
         if (commands==500){ //100,80
             commands=0
             speedmode=false
+            fmt.Println(float32(index)/float32(glen));
         }else{
             speedmode=true
         }
