@@ -7,6 +7,7 @@ import (
 "bytes"
 "io"
 "strings"
+"strconv"
 "net/http"
 "io/ioutil"
 "bufio"
@@ -39,6 +40,19 @@ func RootPage(w http.ResponseWriter, r *http.Request){
     w.Write(data)	
 }
 
+func parse_Status(str []byte) ([]byte,bool){
+    //SD printing byte 123/12345
+    //fix var names and rounding errors
+    st:=string(str);
+    if strings.HasPrefix(st, "SD printing"){
+        splitStatus:=strings.Split(strings.Split(st," ")[3],"/")
+        st,_:=strconv.ParseFloat(splitStatus[0], 32)
+        nd,_:=strconv.ParseFloat(splitStatus[1], 32)
+        return []byte(fmt.Sprintf("%.2f", nd/st)),true
+    }
+    return []byte("No update"),false
+}
+
 func StatusSock(w http.ResponseWriter, r *http.Request){
     c, err := upgrader.Upgrade(w, r, nil)
     if err != nil {
@@ -63,7 +77,10 @@ func StatusSock(w http.ResponseWriter, r *http.Request){
             c.WriteMessage(1,[]byte("Conntection to Printer Closed"))
             break
         }
-        c.WriteMessage(1,str)
+        perc,Send:=parse_Status(str);
+        if Send {
+            c.WriteMessage(1,str);
+        }
     }
 
 }
@@ -129,7 +146,9 @@ func uploadCode(file string,FCode string,FileName string,nodeServer string,w htt
    if (FCode=="M23"){
    		fmt.Fprintf(conn,"M23 %s \n",FileName)
    }
-   fmt.Fprintf(conn,"M27 S2\n")
+   if (FCode=="M23" || FCode=="M928"){
+        fmt.Fprintf(conn,"M27 S2\n") 
+   }
    conn.Close()
    fmt.Fprintf(w,"200ok")
 }
