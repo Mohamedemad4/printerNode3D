@@ -18,7 +18,7 @@ const char* password = "welovehacking5";
 WiFiServer server(9999);
 WiFiClient serverClients[MAX_SRV_CLIENTS];
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(250000);
   WiFi.begin(ssid, password);
   Serial.print("\nConnecting to "); Serial.println(ssid);
   uint8_t i = 0;
@@ -69,7 +69,7 @@ void loop() {
             for(i = 0; i < MAX_SRV_CLIENTS; i++){
               if (serverClients[i] && serverClients[i].connected()){
                 serverClients[i].write(sbuf, len);
-                //delay(1);
+                delay(1);
                 }
               //get data from the Socket and push it to the UART
               while(serverClients[i].available()){ 

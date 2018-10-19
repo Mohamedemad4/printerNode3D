@@ -56,7 +56,7 @@ func StatusSock(w http.ResponseWriter, r *http.Request){
     defer c.Close()
     defer conn.Close()
     for {
-        connbuf := bufio.NewReader(conn)    
+        connbuf := bufio.NewReader(conn)
         str, err:= connbuf.ReadBytes('\n') //it is not a string really
         if err!=nil{
             log.Println(err)
@@ -108,7 +108,6 @@ func uploadCode(file string,FCode string,FileName string,nodeServer string,w htt
 		fmt.Fprintf(w,"M28 %s \n",FileName)
 	}
 
-
 	for index, element := range GcodeSplit{
     	fmt.Fprintf(conn,element+"\n") 
     	commands+=1
@@ -130,6 +129,7 @@ func uploadCode(file string,FCode string,FileName string,nodeServer string,w htt
    if (FCode=="M23"){
    		fmt.Fprintf(conn,"M23 %s \n",FileName)
    }
+   fmt.Fprintf(conn,"M27 S2\n")
    conn.Close()
    fmt.Fprintf(w,"200ok")
 }

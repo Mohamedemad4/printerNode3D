@@ -46,11 +46,29 @@ window.addEventListener("load", function(evt) {
 
 });
 </script>
+<style>
+    .fileUpload {
+    position: relative;
+    overflow: hidden;
+    margin: 10px;
+}
+.fileUpload input.upload {
+    position: absolute;
+    top: 0;
+    right: 0;
+    margin: 0;
+    padding: 0;
+    font-size: 20px;
+    cursor: pointer;
+    opacity: 0;
+    filter: alpha(opacity=0);
+}
+</style>
 </head>
 	<form method="post" action="/" enctype="multipart/form-data">
-		<input type="file" name="gcode"/>
-<button class="w3-btn-black" id="open">Open Print Status</button>
-<button class="w3-btn-black" id="close">close Print Status</button>
+		<input type="file" id="upload" class="w3-button w3-black" name="gcode"/>
+<button class="w3-button w3-black" id="open">Open Print Status</button>
+<button class="w3-button w3-black" id="close">close Print Status</button>
 
 <div id="output"></div>
 		<input type="text" name="fname" placeholder='file name (must end in ".gco")'>
