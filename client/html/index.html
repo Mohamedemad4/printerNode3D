@@ -66,18 +66,33 @@ window.addEventListener("load", function(evt) {
 </style>
 </head>
 	<form method="post" action="/" enctype="multipart/form-data">
-		<input type="file" id="upload" class="w3-button w3-black" name="gcode"/>
-<button class="w3-button w3-black" id="open">Open Print Status</button>
-<button class="w3-button w3-black" id="close">close Print Status</button>
-
-<div id="output"></div>
-		<input type="text" name="fname" placeholder='file name (must end in ".gco")'>
-        <input type="text" name="ipNode" placeholder='Node Ip address'>
+		<input type="file"  id="upload" class="w3-button  w3-center w3-black" name="gcode"/>
+<br>
+        <div class="w3-center">
+        <input type="text" name="fname"  placeholder='filename (must end in ".gco")'>
+        <br>
+       <input class="w3-center" type="text" name="ipNode" placeholder='Node Ip address'>
         
+        </div>
+    <br>
+    <div class="w3-container">
+        <h2>Options</h2>
+
+  <div class="w3-panel w3-blue">
+  <div class="w3-padding-16">
 		<input type="radio" name="fcode" class="w3-radiobox" value="M928">Print While Saving to SD<br>
 		<input type="radio" name="fcode" class="w3-radiobox" value="M28">Only Save To SD Card<br>
 		<input type="radio" name="fcode" class="w3-radiobox" value="M23" checked>Save To SD Card and Then Print (recommended)<br>
-		
+		</div>
+</div>
+        <div class="w3-center">
 		<input type="submit" class="w3-button w3-black">
+        <br><br>
+
+        <button class="w3-button w3-black" id="open">Open Print Status</button>
+<button class="w3-button w3-black" id="close">close Print Status</button>
+<div id="output"></div>
+
+</div>
 	</form>
 </html>
