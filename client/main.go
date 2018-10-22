@@ -79,7 +79,7 @@ func StatusSock(w http.ResponseWriter, r *http.Request){
         }
         perc,Send:=parse_Status(str);
         if Send {
-            c.WriteMessage(1,str);
+            c.WriteMessage(1,perc);
         }
     }
 
@@ -103,7 +103,7 @@ func FileUpload(w http.ResponseWriter, r *http.Request){
 
     contents := Buf.String()
     uploadCode(contents,FCode,FileName,nodeServer,w,r)
-    fmt.Fprintf(w,"s")
+    
 }
 
 func uploadCode(file string,FCode string,FileName string,nodeServer string,w http.ResponseWriter,r *http.Request){
@@ -119,20 +119,22 @@ func uploadCode(file string,FCode string,FileName string,nodeServer string,w htt
 		log.Println(err)
 		fmt.Fprintf(w,"Could not connect to the Node Please check your connection")
 	}
+    fmt.Fprintf(w,"Done! Your file has been uploaded <a href='/'>Click Here</a> to go back")
 	if (FCode=="M928"){
-		fmt.Fprintf(w,"M928 %s \n",FileName) // todo: unsure about this test it please
+		fmt.Fprintf(conn,"M928 %s \n",FileName) // todo: unsure about this test it please
 	}else{
-		fmt.Fprintf(w,"M28 %s \n",FileName)
+		fmt.Fprintf(conn,"M28 "+FileName+"\n")
+        fmt.Printf("M28 "+FileName+"\n")
 	}
-
-	for index, element := range GcodeSplit{
+    time.Sleep(5000 * time.Millisecond)
+    for index, element := range GcodeSplit{
     	fmt.Fprintf(conn,element+"\n") 
     	commands+=1
 
         if (commands==500){ //100,80
             commands=0
             speedmode=false
-            fmt.Println(float32(index)/float32(glen));
+            _=float32(index)/float32(glen);
         }else{
             speedmode=true
         }
@@ -144,11 +146,11 @@ func uploadCode(file string,FCode string,FileName string,nodeServer string,w htt
 
    fmt.Fprintf(conn,"M29\n")
    if (FCode=="M23"){
-   		fmt.Fprintf(conn,"M23 %s \n",FileName)
+   		fmt.Fprintf(conn,"M23 "+FileName+"\n")
+        fmt.Fprintf(conn,"M24 \n")
    }
    if (FCode=="M23" || FCode=="M928"){
         fmt.Fprintf(conn,"M27 S2\n") 
    }
    conn.Close()
-   fmt.Fprintf(w,"200ok")
 }
