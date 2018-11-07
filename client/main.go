@@ -9,7 +9,6 @@ import (
 "strings"
 "strconv"
 "net/http"
-"io/ioutil"
 "bufio"
 "log"
 "net"
@@ -17,7 +16,7 @@ import (
 "github.com/gorilla/websocket"
 "github.com/skratchdot/open-golang/open")
 
-var nodeServer = "";
+var nodeServer = ""
 var upgrader = websocket.Upgrader{}
 
 func main(){
@@ -31,7 +30,7 @@ func main(){
     log.Fatal(http.ListenAndServe(":5000",router))
 }
 func RootPage(w http.ResponseWriter, r *http.Request){
-	data, err := ioutil.ReadFile("html/index.html")
+    data, err := ioutil.ReadFile("html/index.html")
     if err != nil {
         http.Error(w, "Couldn't read file", http.StatusInternalServerError)
         return
@@ -41,8 +40,6 @@ func RootPage(w http.ResponseWriter, r *http.Request){
 }
 
 func parse_Status(str []byte) ([]byte,bool){
-    //SD printing byte 123/12345
-    //fix var names and rounding errors
     st:=string(str);
     if strings.HasPrefix(st, "SD printing"){
         splitStatus:=strings.Split(strings.Split(st," ")[3],"/")
@@ -86,11 +83,19 @@ func StatusSock(w http.ResponseWriter, r *http.Request){
 }
 
 
+func TrimSuffix(s, suffix string) string {
+    if strings.HasSuffix(s, suffix) {
+        s = s[:len(s)-len(suffix)]
+    }
+    return s
+}
+
 func FileUpload(w http.ResponseWriter, r *http.Request){
 	var Buf bytes.Buffer
 	r.ParseForm()
 	file, _, err := r.FormFile("gcode")
-	FileName := r.FormValue("fname")
+	FileName := TrimSuffix(r.FormValue("fname"),"de")
+    
     FCode := r.FormValue("fcode")
     nodeServer = r.FormValue("ipNode")
 	
@@ -102,11 +107,11 @@ func FileUpload(w http.ResponseWriter, r *http.Request){
     io.Copy(&Buf, file)
 
     contents := Buf.String()
-    uploadCode(contents,FCode,FileName,nodeServer,w,r)
+    uploadCode(contents,FCode,FileName,w,r)
     
 }
 
-func uploadCode(file string,FCode string,FileName string,nodeServer string,w http.ResponseWriter,r *http.Request){
+func uploadCode(file string,FCode string,FileName string,w http.ResponseWriter,r *http.Request){
 	var commands int
 	var speedmode bool
 
@@ -115,42 +120,45 @@ func uploadCode(file string,FCode string,FileName string,nodeServer string,w htt
 
 	conn,err:=net.Dial("tcp", nodeServer+":9999")
 
+    time.Sleep(5000 * time.Millisecond)
 	if err!=nil{
 		log.Println(err)
 		fmt.Fprintf(w,"Could not connect to the Node Please check your connection")
 	}
     fmt.Fprintf(w,"Done! Your file has been uploaded <a href='/'>Click Here</a> to go back")
 	if (FCode=="M928"){
-		fmt.Fprintf(conn,"M928 %s \n",FileName) // todo: unsure about this test it please
-	}else{
-		fmt.Fprintf(conn,"M28 "+FileName+"\n")
-        fmt.Printf("M28 "+FileName+"\n")
-	}
-    time.Sleep(5000 * time.Millisecond)
+        fmt.Fprintf(conn,"\r\nM928 "+FileName+"\r\n") // todo: unsure about this test it please
+    }else{
+        fmt.Fprintf(conn,"\r\nM28 "+FileName+"\r\n")
+    }
+    time.Sleep(1000 * time.Millisecond) 
+    
     for index, element := range GcodeSplit{
-    	fmt.Fprintf(conn,element+"\n") 
+    	fmt.Fprintf(conn,"\r\n"+element+"\n\r") 
     	commands+=1
 
-        if (commands==500){ //100,80
+        if (commands==80){
             commands=0
             speedmode=false
-            _=float32(index)/float32(glen);
+            fmt.Println(float32(index)/float32(glen));
         }else{
             speedmode=true
+            time.Sleep(1 *time.Millisecond)
         }
 
-        if (speedmode!=true){
-            time.Sleep(100 * time.Millisecond) //0.01 sec
+        if (speedmode==false){
+            time.Sleep(100 * time.Millisecond) //0.1 sec
         }
     }
 
-   fmt.Fprintf(conn,"M29\n")
+   fmt.Fprintf(conn,"\r\n M29 "+FileName+"\r\n") //somehow doesn't work unless I do this,Even though similar Projects don't do the same
+   time.Sleep(1000 *time.Millisecond)
    if (FCode=="M23"){
-   		fmt.Fprintf(conn,"M23 "+FileName+"\n")
-        fmt.Fprintf(conn,"M24 \n")
+   		fmt.Fprintf(conn,"\r\nM23 "+FileName+"\r\n")
+        fmt.Fprintf(conn,"\r\nM24\r\n")
    }
    if (FCode=="M23" || FCode=="M928"){
-        fmt.Fprintf(conn,"M27 S2\n") 
+        fmt.Fprintf(conn,"\r\nM27 S2\r\n") 
    }
    conn.Close()
 }
